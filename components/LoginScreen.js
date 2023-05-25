@@ -2,7 +2,6 @@ import { useContext, useState } from "react";
 import {
   Platform,
   View,
-  // KeyboardAvoidingView,
   TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
@@ -48,19 +47,20 @@ const LoginScreen = () => {
 
   const handleSubmit = () => {
     keyboardHide();
+    console.log('loginState :>> ', loginState);
     setLoginState(initialLoginState);
   };
-  console.log("isShowKeyboard :>> ", isShowKeyboard);
-  console.log("isActiveInput :>> ", isActiveInput);
+
   return (
     <KeyboardAwareScrollView
       contentContainerStyle={styles.contentContainer}
-      keyboardShouldPersistTaps="never"
-      extraScrollHeight={isActiveInput === "email" ? 35 : 70}
+      keyboardShouldPersistTaps="always"
+      extraScrollHeight={Platform.select({
+        ios: isActiveInput === "email" ? 35 : 70,
+        android: isActiveInput === "password" ? -120 : -190,
+      })}
       enableOnAndroid={true}
-      //   ref={scrollViewRef}
-      //   keyboardVerticalOffset={Platform.select({ ios: -100, android: -900 })}
-      //   behavior={Platform.OS === "ios" && "padding"}
+      enableAutomaticScroll={true}
     >
       <View
         style={{

@@ -2,7 +2,6 @@ import { useContext, useState } from "react";
 import {
   Platform,
   View,
-  // KeyboardAvoidingView,
   TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
@@ -12,7 +11,6 @@ import {
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 import { KeyboardContext } from "../contexts/KeyboardContext";
-
 import Avatar from "./Avatar";
 
 const initialRegistrationState = {
@@ -53,21 +51,20 @@ const RegistrationScreen = () => {
 
   const handleSubmit = () => {
     keyboardHide();
+    console.log('registrationState :>> ', registrationState);
     setRegistrationState(initialRegistrationState);
   };
-  console.log("isShowKeyboard :>> ", isShowKeyboard);
-  console.log("isActiveInput :>> ", isActiveInput);
 
   return (
     <KeyboardAwareScrollView
       contentContainerStyle={styles.contentContainer}
-      keyboardShouldPersistTaps="handled"
-      extraScrollHeight={isActiveInput === "password" ? 70 : 90}
+      keyboardShouldPersistTaps="always"
+      extraScrollHeight={Platform.select({
+        ios: isActiveInput === "password" ? 70 : 90,
+        android: isActiveInput === "password" ? -90 : -140,
+      })}
       enableOnAndroid={true}
-      enableAutomaticScroll={Platform.OS === "ios"}
-      //   ref={scrollViewRef}
-      //   keyboardVerticalOffset={Platform.select({ ios: -100, android: -900 })}
-      //   behavior={Platform.OS === "ios" && "padding"}
+      enableAutomaticScroll={true}
     >
       <View
         style={{
@@ -79,7 +76,7 @@ const RegistrationScreen = () => {
         }}
       >
         <Avatar />
-        <Text style={styles.titleForm}>Реєстрація</Text>
+        <Text style={styles.titleForm}>Реєстрція</Text>
         <View style={styles.inputsList}>
           <TextInput
             style={{
