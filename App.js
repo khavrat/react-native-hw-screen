@@ -7,8 +7,9 @@ import {
   Keyboard,
   TouchableWithoutFeedback,
 } from "react-native";
-// import RegistrationScreen from "./components/RegistrationScreen";
+import RegistrationScreen from "./components/RegistrationScreen";
 import LoginScreen from "./components/LoginScreen";
+import PostsScreen from './screens/PostsScreen'
 
 import {
   useFonts,
@@ -44,9 +45,10 @@ export default function App() {
           <View style={styles.container}>
             <ImageBackground source={imageBg} style={styles.background}>
               <StatusBar style="auto" />
-              {/* <RegistrationScreen /> */}
-              <LoginScreen/>
+              <RegistrationScreen />
+              {/* <LoginScreen/> */}
             </ImageBackground>
+            {/* <PostsScreen /> */}
           </View>
         </TouchableWithoutFeedback>
       </KeyboardContext.Provider>

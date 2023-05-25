@@ -1,5 +1,5 @@
 import { View, TouchableOpacity, Image, StyleSheet } from "react-native";
-import addAvatar from '../assets/images/addAvatar.png';
+import addAvatar from '../../assets/images/addAvatar.png';
 
 
 const Avatar = () => {

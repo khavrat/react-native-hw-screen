@@ -3,7 +3,6 @@ import {
   Platform,
   View,
   TextInput,
-  TouchableOpacity,
   TouchableWithoutFeedback,
   Text,
   StyleSheet,
@@ -11,7 +10,8 @@ import {
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 import { KeyboardContext } from "../contexts/KeyboardContext";
-import Avatar from "./Avatar";
+import Avatar from "./formComponents/Avatar";
+import FormButton from "./formComponents/FormButton";
 
 const initialRegistrationState = {
   login: "",
@@ -28,7 +28,7 @@ const RegistrationScreen = () => {
   );
   const [isActiveInput, setIsActiveInput] = useState("");
   const [isShowPassword, setIsShowPassword] = useState(false);
-  
+
   const handleFocus = (inputName) => {
     keyboardShow();
     setIsActiveInput(inputName);
@@ -51,7 +51,7 @@ const RegistrationScreen = () => {
 
   const handleSubmit = () => {
     keyboardHide();
-    console.log('registrationState :>> ', registrationState);
+    console.log("registrationState :>> ", registrationState);
     setRegistrationState(initialRegistrationState);
   };
 
@@ -76,7 +76,7 @@ const RegistrationScreen = () => {
         }}
       >
         <Avatar />
-        <Text style={styles.titleForm}>Реєстрція</Text>
+        <Text style={styles.titleForm}>Реєстрація</Text>
         <View style={styles.inputsList}>
           <TextInput
             style={{
@@ -136,13 +136,9 @@ const RegistrationScreen = () => {
             </TouchableWithoutFeedback>
           </View>
         </View>
-        <TouchableOpacity
-          style={styles.button}
-          activeOpacity={0.8}
-          onPress={handleSubmit}
-        >
+        <FormButton onPress={handleSubmit}>
           <Text style={styles.buttonText}>Зареєструватися</Text>
-        </TouchableOpacity>
+        </FormButton>
         <Text style={styles.loginLink}>Вже є акаунт? Увійти</Text>
       </View>
     </KeyboardAwareScrollView>
@@ -182,7 +178,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingVertical: 0,
     borderRadius: 8,
-
     paddingTop: Platform.OS === "ios" ? 16 : 11,
     paddingBottom: Platform.OS === "ios" ? 16 : 11,
     paddingLeft: 16,
@@ -204,17 +199,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 19,
     color: "#1B4371",
-  },
-  button: {
-    display: "flex",
-    alignItems: "center",
-    paddingTop: 16,
-    paddingBottom: 16,
-    paddingRight: 32,
-    paddingLeft: 32,
-    marginBottom: 16,
-    borderRadius: 100,
-    backgroundColor: "#FF6C00",
   },
   buttonText: {
     color: "#FFFFFF",

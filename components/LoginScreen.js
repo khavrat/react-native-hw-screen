@@ -3,7 +3,6 @@ import {
   Platform,
   View,
   TextInput,
-  TouchableOpacity,
   TouchableWithoutFeedback,
   Text,
   StyleSheet,
@@ -11,6 +10,7 @@ import {
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 import { KeyboardContext } from "../contexts/KeyboardContext";
+import FormButton from './formComponents/FormButton'
 
 const initialLoginState = {
   email: "",
@@ -57,7 +57,7 @@ const LoginScreen = () => {
       keyboardShouldPersistTaps="always"
       extraScrollHeight={Platform.select({
         ios: isActiveInput === "email" ? 35 : 70,
-        android: isActiveInput === "password" ? -120 : -190,
+        android: -160,
       })}
       enableOnAndroid={true}
       enableAutomaticScroll={true}
@@ -71,7 +71,7 @@ const LoginScreen = () => {
           }),
         }}
       >
-        <Text style={styles.titleForm}>Увійти</Text>
+        <Text style={styles.titleForm}>Увiйти</Text>
         <View style={styles.inputsList}>
           <TextInput
             style={{
@@ -117,13 +117,9 @@ const LoginScreen = () => {
             </TouchableWithoutFeedback>
           </View>
         </View>
-        <TouchableOpacity
-          style={styles.button}
-          activeOpacity={0.8}
-          onPress={handleSubmit}
-        >
+        <FormButton onPress={handleSubmit}>
           <Text style={styles.buttonText}>Увійти</Text>
-        </TouchableOpacity>
+        </FormButton>
         <Text style={styles.loginLink}>Немає акаунту? Зареєструватися</Text>
       </View>
     </KeyboardAwareScrollView>
@@ -184,17 +180,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 19,
     color: "#1B4371",
-  },
-  button: {
-    display: "flex",
-    alignItems: "center",
-    paddingTop: 16,
-    paddingBottom: 16,
-    paddingRight: 32,
-    paddingLeft: 32,
-    marginBottom: 16,
-    borderRadius: 100,
-    backgroundColor: "#FF6C00",
   },
   buttonText: {
     color: "#FFFFFF",
