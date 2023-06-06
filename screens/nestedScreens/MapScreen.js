@@ -1,14 +1,18 @@
 import { View, Text, StyleSheet } from "react-native";
 
-const PostsScreen = () => {
+import useHideTabBarOnNestedScreen from "../../helpers/useHideTabBarOnNested";
+
+const MapScreen = () => {
+  useHideTabBarOnNestedScreen();
+  
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>it will be PostsScreen</Text>
+      <Text style={styles.text}>it will be MapScreen</Text>
     </View>
   );
 };
 
-export default PostsScreen;
+export default MapScreen;
 
 const styles = StyleSheet.create({
   container: {

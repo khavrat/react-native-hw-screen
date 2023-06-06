@@ -1,13 +1,24 @@
-import { TouchableOpacity, StyleSheet } from "react-native";
+import { TouchableOpacity, Text,StyleSheet } from "react-native";
 
-const FormButton = ({ onPress, children }) => {
+const FormButton = ({ onPress, isActive, children }) => {
   return (
     <TouchableOpacity
-      style={styles.button}
+      style={[
+        styles.button,
+        isActive ? styles.activeButton : styles.disabledButton,
+      ]}
       activeOpacity={0.8}
       onPress={onPress}
+      disabled={!isActive}
     >
-      {children}
+      <Text
+        style={[
+          styles.buttonText,
+          isActive ? styles.activeButtonText : styles.disabledButtonText,
+        ]}
+      >
+        {children}
+      </Text>
     </TouchableOpacity>
   );
 };
@@ -24,6 +35,22 @@ const styles = StyleSheet.create({
     paddingLeft: 32,
     marginBottom: 16,
     borderRadius: 100,
+  },
+  activeButton: {
     backgroundColor: "#FF6C00",
+  },
+  disabledButton: {
+    backgroundColor: "#F6F6F6",
+  },
+  buttonText: {
+    fontFamily: "Roboto_400Regular",
+    fontSize: 16,
+    lineHeight: 19,
+  },
+  activeButtonText: {
+    color: "#FFFFFF",
+  },
+  disabledButtonText: {
+    color: "#BDBDBD",
   },
 });
