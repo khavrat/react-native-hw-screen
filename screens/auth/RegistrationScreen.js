@@ -57,7 +57,7 @@ const RegistrationScreen = () => {
 
   const handleSubmit = () => {
     keyboardHide();
-    navigation.navigate("MainTab");
+    navigation.navigate('MainTab')
     console.log("registrationState :>> ", registrationState);
     setRegistrationState(initialRegistrationState);
   };

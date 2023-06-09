@@ -1,4 +1,4 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect, useRef } from "react";
 import {
   Platform,
   TouchableWithoutFeedback,
@@ -10,15 +10,15 @@ import {
 } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
-// import { Camera } from "expo-camera";
-// import { TouchableOpacity } from "react-native-gesture-handler";
+import { Camera, CameraType } from "expo-camera";
+import * as Location from "expo-location";
+import { TouchableOpacity } from "react-native-gesture-handler";
 import FormButton from "../../components/formComponents/FormButton";
 
 import cameraIcon from "../../assets/icons/cameraIcon.png";
+import flipCameraIcon from "../../assets/icons/flipCameraIcon.png";
 import mapPinIcon from "../../assets/icons/mapPinIcon.png";
 import trashIcon from "../../assets/icons/trashIcon.png";
-
-import { TouchableOpacity } from "react-native-gesture-handler";
 
 import { KeyboardContext } from "../../contexts/KeyboardContext";
 import useHideTabBarOnMainScreen from "../../helpers/useHideTabBarOnMain";
@@ -28,12 +28,90 @@ const initialPostState = {
   place: "",
 };
 
-const CreatePostsScreen = () => {
+const CreatePostsScreen = ({ navigation }) => {
   const { keyboardHide, keyboardShow } = useContext(KeyboardContext);
+
+  const [editPhoto, setEditPhoto] = useState(false);
   const [postState, setPostState] = useState(initialPostState);
   const [isActiveInput, setIsActiveInput] = useState("");
 
-  useHideTabBarOnMainScreen()
+  const [location, setLocation] = useState(null);
+  const [errorMsg, setErrorMsg] = useState(null);
+
+  const cameraRef = useRef(null);
+  const [permission, requestPermission] = Camera.useCameraPermissions();
+  const [type, setType] = useState(CameraType.back);
+  const [photo, setPhoto] = useState(null);
+
+  useHideTabBarOnMainScreen();
+
+  if (!permission || !permission.granted) {
+    requestPermission();
+  }
+
+  useEffect(() => {
+    (async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        setErrorMsg("В дозволі на доступ до локації було відмовлено");
+        return;
+      }
+      let location = await Location.getCurrentPositionAsync({});
+      setLocation(location);
+    })();
+  }, []);
+
+  const getLocationName = async (latitude, longitude) => {
+    try {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        setErrorMsg("В дозволі на доступ до локації було відмовлено");
+        return;
+      }
+      const location = await Location.reverseGeocodeAsync({
+        latitude,
+        longitude,
+      });
+      if (location.length > 0) {
+        const { region, country } = location[0];
+        return `${region}, ${country}`;
+      }
+    } catch (error) {
+      console.log(error.message);
+    }
+    return null;
+  };
+
+  const putLocationToInput = async (latitude, longitude) => {
+    const locationName = await getLocationName(latitude, longitude);
+    setPostState((prevState) => ({
+      ...prevState,
+      place: locationName,
+    }));
+  };
+
+  function toggleCameraType() {
+    setType((current) =>
+      current === CameraType.back ? CameraType.front : CameraType.back
+    );
+  }
+
+  const takePhoto = async () => {
+    try {
+      const photo = await cameraRef.current.takePictureAsync();
+      setPhoto(photo.uri);
+
+      const { latitude, longitude } = location.coords;
+      putLocationToInput(latitude, longitude);
+      setEditPhoto(true);
+    } catch (error) {
+      console.log(error.message);
+    }
+  };
+
+  const getEditPhoto = () => {
+    setPhoto(null);
+  };
 
   const handleFocus = (inputName) => {
     keyboardShow();
@@ -60,10 +138,18 @@ const CreatePostsScreen = () => {
     }
   };
 
+  const trashPost = () => {
+    setPhoto(null);
+    setEditPhoto(false);
+    setPostState(initialPostState);
+  };
+
   const handleSubmit = () => {
     keyboardHide();
-    console.log("postState :>> ", postState);
+    navigation.navigate("Posts", { photo, location, postState });
     setPostState(initialPostState);
+    setPhoto(null);
+    setEditPhoto(false);
   };
 
   return (
@@ -80,12 +166,38 @@ const CreatePostsScreen = () => {
           enableAutomaticScroll={true}
         >
           <View>
-            <View style={styles.photoContainer}>
-              <View style={styles.cameraWrapper}>
-                <Image source={cameraIcon} size={24} />
-              </View>
-            </View>
-            <Text style={styles.textLoad}>Завантажте фото</Text>
+            {permission?.granted ? (
+              <Camera style={styles.camera} ref={cameraRef} type={type}>
+                {photo && (
+                  <View style={styles.photoContainer}>
+                    <Image
+                      source={{ uri: photo || null }}
+                      style={{ width: "100%", height: 240 }}
+                    />
+                  </View>
+                )}
+                <TouchableOpacity
+                  style={styles.snapContainer}
+                  onPress={takePhoto}
+                >
+                  <Image source={cameraIcon} size={24} />
+                </TouchableOpacity>
+                <View style={styles.flipCameraContainer}>
+                  <TouchableOpacity onPress={toggleCameraType}>
+                    <Image source={flipCameraIcon} size={24} />
+                  </TouchableOpacity>
+                </View>
+              </Camera>
+            ) : (
+              <Text>Чекаємо доступ до камери</Text>
+            )}
+            <TouchableOpacity onPress={getEditPhoto}>
+              {!editPhoto ? (
+                <Text style={styles.textLoad}>Завантажте фото</Text>
+              ) : (
+                <Text style={styles.textLoad}>Редагувати фото</Text>
+              )}
+            </TouchableOpacity>
             <View style={styles.inputList}>
               <TextInput
                 style={{
@@ -127,7 +239,11 @@ const CreatePostsScreen = () => {
             </FormButton>
           </View>
           <View style={styles.trashButtonWrapper}>
-            <TouchableOpacity style={styles.trashButton} activeOpacity={0.8}>
+            <TouchableOpacity
+              style={styles.trashButton}
+              activeOpacity={0.8}
+              onPress={trashPost}
+            >
               <Image source={trashIcon} />
             </TouchableOpacity>
           </View>
@@ -143,16 +259,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#FFFFFF",
-    paddingLeft: 16,
-    paddingRight: 16,
+    paddingHorizontal: 16,
   },
   contentContainer: {
     flex: 1,
     justifyContent: "space-between",
   },
-  photoContainer: {
+  camera: {
     width: "100%",
     height: 240,
+    overflow: "hidden",
     marginTop: 32,
     marginBottom: 8,
     backgroundColor: "#F6F6F6",
@@ -162,11 +278,24 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  cameraWrapper: {
+  snapContainer: {
     width: 60,
     height: 60,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
     borderRadius: 50,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  photoContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: 240,
+    borderWidth: 1,
+    borderRadius: 8,
+    overflow: "hidden",
+    borderColor: "#E8E8E8",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -216,48 +345,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  flipCameraContainer: {
+    position: "absolute",
+    bottom: 16,
+    right: 16,
+  },
 });
-
-// const [camera, setCamera] = useState(null);
-// const [photo, setPhoto] = useState('');
-
-// const takePhoto = async () => {
-//   const photo = await camera.takePictureAsync();
-//   setPhoto(photo.uri)
-// };
-// console.log('photo :>> ', photo);
-
-{
-  /* <Camera style={styles.camera} ref={setCamera}>
-        {photo && <View style={styles.photoContainer}><Image source={{ uri: photo }} style={ {width: 200, height:200}} /></View>}
-        <TouchableOpacity style={styles.snapContainer} onPress={takePhoto}>
-          <Text style={styles.snap}>SNAP</Text>
-        </TouchableOpacity>
-      </Camera> */
-}
-
-// camera: {
-//   // height: 300,
-//   flex: 1,
-//   justifyContent: "center",
-//   alignItems: "center",
-// },
-// photoContainer: {
-//   position: 'absolute',
-//   top: 0,
-//   left: 0,
-//   borderColor: 'red',
-//   borderWidth: 1,
-// },
-// snapContainer: {
-//   marginTop: 500,
-//   borderWidth: 1,
-//   borderColor: "#fff",
-//   width: 70,
-//   height: 70,
-//   justifyContent: "center",
-//   alignItems: "center",
-// },
-// snap: {
-//   color: "#fff",
-// },

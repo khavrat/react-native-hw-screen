@@ -8,8 +8,6 @@ import MapScreen from "../nestedScreens/MapScreen";
 import GoBackButton from "../../components/screenComponents/GoBackButton";
 import LogOutButton from '../../components/screenComponents/LogOutButton';
 
-import logOutIcon from "../../assets/icons/logOutIcon.png";
-
 const NestedStack = createStackNavigator();
 
 const PostsScreen = ({navigation}) => {

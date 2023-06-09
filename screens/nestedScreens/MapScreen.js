@@ -1,13 +1,26 @@
-import { View, Text, StyleSheet } from "react-native";
+import { View, StyleSheet } from "react-native";
+import MapView, { Marker } from "react-native-maps";
 
 import useHideTabBarOnNestedScreen from "../../helpers/useHideTabBarOnNested";
 
-const MapScreen = () => {
-  useHideTabBarOnNestedScreen();
+const MapScreen = ({ route }) => {
+  const { latitude, longitude, title } = route.params;
   
+  useHideTabBarOnNestedScreen();
+
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>it will be MapScreen</Text>
+      <MapView
+        style={styles.map}
+        initialRegion={{
+          latitude: latitude,
+          longitude: longitude,
+          latitudeDelta: 0.0922,
+          longitudeDelta: 0.0421,
+        }}
+      >
+        <Marker coordinate={{ latitude: latitude, longitude: longitude }} title={ title} />
+      </MapView>
     </View>
   );
 };
@@ -17,13 +30,9 @@ export default MapScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
   },
-  text: {
-    fontFamily: "Roboto_400Regular",
-    fontSize: 26,
-    lineHeight: 30,
-    color: "#1B4371",
+  map: {
+    width: "100%",
+    height: "100%",
   },
 });
