@@ -1,12 +1,10 @@
 import React, { useState } from "react";
+import { Provider } from "react-redux";
 
 import "react-native-gesture-handler";
-import { NavigationContainer } from "@react-navigation/native";
 
 import { StatusBar } from "expo-status-bar";
 import { Keyboard } from "react-native";
-
-import { useRoute } from "./router";
 
 import {
   useFonts,
@@ -14,14 +12,20 @@ import {
   Roboto_500Medium,
 } from "@expo-google-fonts/roboto";
 
-import { KeyboardContext } from "./contexts/KeyboardContext";
+import { store } from "./redux/store";
 
+import { KeyboardContext } from "./contexts/KeyboardContext";
+import MainComponent from "./components/MainComponent";
 
 export default function App() {
   let [fontsLoaded] = useFonts({ Roboto_400Regular, Roboto_500Medium });
   const [isShowKeyboard, setIsShowKeyboard] = useState(false);
 
-  const routing = useRoute({});
+
+
+
+store.subscribe(() => console.info('store in App', store.getState()));
+
 
   const keyboardHide = () => {
     Keyboard.dismiss();
@@ -31,6 +35,7 @@ export default function App() {
   const keyboardShow = () => {
     setIsShowKeyboard(true);
   };
+  
   if (!fontsLoaded) {
     return null;
   } else {
@@ -38,11 +43,11 @@ export default function App() {
       <KeyboardContext.Provider
         value={{ isShowKeyboard, keyboardHide, keyboardShow }}
       >
-          <NavigationContainer
-          >
-            {routing}
-          </NavigationContainer>
+        <Provider store={store}>
+          <MainComponent />
+          {/* <NavigationContainer>{routing}</NavigationContainer> */}
           {/* <StatusBar style="auto" /> */}
+        </Provider>
       </KeyboardContext.Provider>
     );
   }

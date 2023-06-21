@@ -7,16 +7,23 @@ import {
   ImageBackground,
   StyleSheet,
 } from "react-native";
+import { useDispatch } from "react-redux";
 
 import { KeyboardContext } from "../../contexts/KeyboardContext";
 
 import imageBg from "../../assets/images/imageBg.jpg";
 import Avatar from "../../components/formComponents/Avatar";
 import LogOutButton from "../../components/screenComponents/LogOutButton";
+import { authSignOutUser } from "../../redux/auth/authOperations";
 
-const ProfileScreen = ({navigation}) => {
+const ProfileScreen = ({ navigation }) => {
   const { isShowKeyboard, keyboardHide, keyboardShow } =
     useContext(KeyboardContext);
+  const dispatch = useDispatch();
+
+  const signOut = () => {
+    dispatch(authSignOutUser());
+  };
 
   return (
     <TouchableWithoutFeedback onPress={keyboardHide}>
@@ -25,9 +32,7 @@ const ProfileScreen = ({navigation}) => {
           <View style={styles.box}>
             <Avatar />
             <View style={styles.logOutBtn}>
-              <LogOutButton
-                onPress={() => navigation.navigate("Registration")}
-              />
+              <LogOutButton onPress={signOut} />
             </View>
             <Text style={styles.titleBox}>Profile screen</Text>
           </View>
@@ -50,7 +55,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   box: {
-    position: 'relative',
+    position: "relative",
     backgroundColor: "#FFFFFF",
     borderTopLeftRadius: 25,
     borderTopRightRadius: 25,
@@ -66,8 +71,8 @@ const styles = StyleSheet.create({
     color: "#212121",
   },
   logOutBtn: {
-    position: 'absolute',
+    position: "absolute",
     top: 22,
     right: 16,
-  }
+  },
 });

@@ -1,6 +1,8 @@
 import { createStackNavigator } from "@react-navigation/stack";
 // import { moduleName } from "react-native";
 import { Image, View } from "react-native";
+import { useDispatch } from "react-redux";
+
 import HomePostsScreen from "../nestedScreens/Home";
 import CommentsScreen from "../nestedScreens/CommentsScreen";
 import MapScreen from "../nestedScreens/MapScreen";
@@ -8,9 +10,17 @@ import MapScreen from "../nestedScreens/MapScreen";
 import GoBackButton from "../../components/screenComponents/GoBackButton";
 import LogOutButton from '../../components/screenComponents/LogOutButton';
 
+import { authSignOutUser } from "../../redux/auth/authOperations";
+
 const NestedStack = createStackNavigator();
 
-const PostsScreen = ({navigation}) => {
+const PostsScreen = ({ navigation }) => {
+    const dispatch = useDispatch();
+
+    const signOut = () => {
+      dispatch(authSignOutUser());
+    };
+
   return (
     <NestedStack.Navigator
       screenOptions={{
@@ -36,7 +46,7 @@ const PostsScreen = ({navigation}) => {
           headerRight: () => {
             return (
               <View style={{ marginRight: 16 }}>
-                <LogOutButton onPress={()=>navigation.navigate('Registration') } />
+                <LogOutButton onPress={signOut} />
               </View>
             );
           },

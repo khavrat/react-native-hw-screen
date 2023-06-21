@@ -9,11 +9,14 @@ import {
   StyleSheet,
   ImageBackground,
 } from "react-native";
+import { useDispatch } from "react-redux";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 import { KeyboardContext } from "../../contexts/KeyboardContext";
 import imageBg from "../../assets/images/imageBg.jpg";
 import FormButton from "../../components/formComponents/FormButton";
+
+import { authSignInUser } from "../../redux/auth/authOperations";
 
 const initialLoginState = {
   email: "",
@@ -27,6 +30,8 @@ const LoginScreen = ({ navigation }) => {
   const [loginState, setLoginState] = useState(initialLoginState);
   const [isActiveInput, setIsActiveInput] = useState("");
   const [isShowPassword, setIsShowPassword] = useState(false);
+
+  const dispatch = useDispatch();
 
   const handleFocus = (inputName) => {
     keyboardShow();
@@ -50,8 +55,8 @@ const LoginScreen = ({ navigation }) => {
 
   const handleSubmit = () => {
     keyboardHide();
-    navigation.navigate("MainTab");
-    console.log("loginState :>> ", loginState);
+    // navigation.navigate("MainTab");
+    dispatch(authSignInUser(loginState));
     setLoginState(initialLoginState);
   };
 
@@ -136,11 +141,11 @@ const LoginScreen = ({ navigation }) => {
               >
                 <Text style={styles.loginLink}>
                   Немає акаунту?{" "}
-                    <Text
-                      style={{ ...styles.loginLink, ...styles.underlineText }}
-                    >
-                       Зареєструватися
-                    </Text>
+                  <Text
+                    style={{ ...styles.loginLink, ...styles.underlineText }}
+                  >
+                    Зареєструватися
+                  </Text>
                 </Text>
               </TouchableOpacity>
             </View>

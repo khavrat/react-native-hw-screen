@@ -1,27 +1,38 @@
 import { createStackNavigator } from "@react-navigation/stack";
 
-import AuthStackNav from './routs/AuthStackNav';
+import AuthStackNav from "./routs/AuthStackNav";
 import MainTabNav from "./routs/MainTabNav";
 
-const Stack = createStackNavigator();
+// const Stack = createStackNavigator();
 
-export const useRoute = (isAuth) => {
-  return (
-    <Stack.Navigator
-      screenOptions={{ headerShown: false}}
-    >
-      <Stack.Group
-        navigationKey={!isAuth ? "MainTab" : "AuthStack"}
-      >
-        <Stack.Screen
-          name="AuthStack"
-          component={AuthStackNav}
-        />
-        <Stack.Screen
-          name="MainTab"
-          component={MainTabNav}
-        />
-      </Stack.Group>
-    </Stack.Navigator>
-  );
+// export const useRoute = (user) => {
+//   console.log("user in router:>> ", user);
+//   return (
+//     <Stack.Navigator screenOptions={{ headerShown: false }}>
+//       <Stack.Group>
+//         <Stack.Screen
+//           navigationKey={!user ? "AuthStack" : "MainTab"}
+//           name="AuthStack"
+//           component={AuthStackNav}
+//         />
+//         <Stack.Screen
+//           navigationKey={!user ? "AuthStack" : "MainTab"}
+//           name="MainTab"
+//           component={MainTabNav}
+//         />
+//       </Stack.Group>
+//     </Stack.Navigator>
+//   );
+// };
+
+
+export const useRoute = (user) => {
+  console.log("user in router:>> ", user);
+  if (!user) {
+    return <AuthStackNav/>;
+  } else {
+    return <MainTabNav/>;
+  }
 };
+
+

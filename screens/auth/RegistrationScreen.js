@@ -10,13 +10,16 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import { useNavigation } from "@react-navigation/native";
+import { useDispatch } from "react-redux";
 
 import { KeyboardContext } from "../../contexts/KeyboardContext";
 import imageBg from "../../assets/images/imageBg.jpg";
 
 import Avatar from "../../components/formComponents/Avatar";
 import FormButton from "../../components/formComponents/FormButton";
-import { useNavigation } from "@react-navigation/native";
+
+import {authSignUpUser} from '../../redux/auth/authOperations'
 
 const initialRegistrationState = {
   login: "",
@@ -34,6 +37,8 @@ const RegistrationScreen = () => {
   );
   const [isActiveInput, setIsActiveInput] = useState("");
   const [isShowPassword, setIsShowPassword] = useState(false);
+
+  const dispatch = useDispatch();
 
   const handleFocus = (inputName) => {
     keyboardShow();
@@ -57,8 +62,8 @@ const RegistrationScreen = () => {
 
   const handleSubmit = () => {
     keyboardHide();
-    navigation.navigate('MainTab')
-    console.log("registrationState :>> ", registrationState);
+    // navigation.navigate('MainTab')
+    dispatch(authSignUpUser(registrationState));
     setRegistrationState(initialRegistrationState);
   };
 
