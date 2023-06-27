@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSelector } from "react-redux";
 import {
   View,
   Text,
@@ -7,33 +8,53 @@ import {
   Image,
   TouchableOpacity,
 } from "react-native";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../../firebase/config";
 import mapPinIcon from "../../assets/icons/mapPinIcon.png";
 import commentsIcon from "../../assets/icons/commentsIcon.png";
 
 const HomePostsScreen = ({ navigation, route }) => {
   const [posts, setPosts] = useState([]);
 
+  const { login, email, userId, avatarPath } = useSelector((state) => state.auth);
+
   useEffect(() => {
-    if (route.params) {
-      setPosts((prevState) => [...prevState, route.params]);
-    }
-  }, [route.params]);
+    getAllPost();
+  }, []);
+
+  const getAllPost = async () => {
+    const querySnapshot = await getDocs(collection(db, "posts"));
+
+    const newPosts = querySnapshot.docs.map((doc) => ({
+      ...doc.data(),
+      id: doc.id,
+    }));
+    setPosts(newPosts);
+  };
+  console.log("posts :>> ", posts);
 
   const sendLocationToMap = (latitude, longitude, title) => {
     navigation.navigate("Map", { latitude, longitude, title });
   };
 
-  const openComments = (photo) => {
-    navigation.navigate("Comments", { photo });
+  const openComments = (id, photo) => {
+    navigation.navigate("Comments", { id, photo });
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.userDataContainer}>
-        <View style={styles.userPhotoContainer}></View>
+        <View style={styles.userPhotoContainer}>
+          {avatarPath !== null && (
+            <Image
+              source={{ uri: avatarPath }}
+              style={{ width: 60, height: 60, borderRadius: 16 }}
+            />
+          )}
+        </View>
         <View>
-          <Text style={styles.userName}>It wil be userName</Text>
-          <Text style={styles.userEmail}>It wil be userEmail</Text>
+          <Text style={styles.userName}>{login}</Text>
+          <Text style={styles.userEmail}>{email}</Text>
         </View>
       </View>
       <FlatList
@@ -47,14 +68,14 @@ const HomePostsScreen = ({ navigation, route }) => {
                 style={{ width: "100%", height: 240 }}
               />
             </View>
-            <Text style={styles.photoTitle}>{item.postState.title}</Text>
+            <Text style={styles.photoTitle}>{item.title}</Text>
             <View style={styles.infoBlock}>
               <TouchableOpacity
                 style={styles.infoDetails}
                 title="go to comments"
                 activeOpacity={0.8}
                 onPress={() => {
-                  item.location && openComments(item.photo);
+                  item.location && openComments(item.id, item.photo);
                 }}
               >
                 <Image
@@ -73,9 +94,9 @@ const HomePostsScreen = ({ navigation, route }) => {
                 onPress={() => {
                   item.location &&
                     sendLocationToMap(
-                      item.location.coords.latitude,
-                      item.location.coords.longitude,
-                      item.postState.title
+                      item.location.latitude,
+                      item.location.longitude,
+                      item.title
                     );
                 }}
               >
@@ -84,7 +105,7 @@ const HomePostsScreen = ({ navigation, route }) => {
                   size={24}
                   style={styles.infoDetailsIcon}
                 />
-                <Text style={styles.locationInfo}>{item.postState.place}</Text>
+                <Text style={styles.locationInfo}>{item.place}</Text>
               </TouchableOpacity>
             </View>
           </View>

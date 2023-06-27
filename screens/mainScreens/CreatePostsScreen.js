@@ -1,4 +1,5 @@
 import { useState, useContext, useEffect, useRef } from "react";
+import { useSelector } from "react-redux";
 import {
   Platform,
   TouchableWithoutFeedback,
@@ -20,8 +21,12 @@ import flipCameraIcon from "../../assets/icons/flipCameraIcon.png";
 import mapPinIcon from "../../assets/icons/mapPinIcon.png";
 import trashIcon from "../../assets/icons/trashIcon.png";
 
+import { collection, addDoc, doc, setDoc, getDoc } from "firebase/firestore";
+import { db, storage } from "../../firebase/config";
+
 import { KeyboardContext } from "../../contexts/KeyboardContext";
 import useHideTabBarOnMainScreen from "../../helpers/useHideTabBarOnMain";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
 const initialPostState = {
   title: "",
@@ -42,6 +47,8 @@ const CreatePostsScreen = ({ navigation }) => {
   const [permission, requestPermission] = Camera.useCameraPermissions();
   const [type, setType] = useState(CameraType.back);
   const [photo, setPhoto] = useState(null);
+
+  const { userId, login } = useSelector((state) => state.auth);
 
   useHideTabBarOnMainScreen();
 
@@ -100,12 +107,46 @@ const CreatePostsScreen = ({ navigation }) => {
     try {
       const photo = await cameraRef.current.takePictureAsync();
       setPhoto(photo.uri);
-
       const { latitude, longitude } = location.coords;
       putLocationToInput(latitude, longitude);
       setEditPhoto(true);
     } catch (error) {
       console.log(error.message);
+    }
+  };
+
+  const photoExchangeThroughFirestore = async () => {
+    try {
+      const response = await fetch(photo);
+      const file = await response.blob();
+
+      const uniquePostId = Date.now().toString();
+
+      const storageRef = ref(storage, `postsPhoto/${uniquePostId}`);
+
+      await uploadBytes(storageRef, file);
+      const downloadPhoto = await getDownloadURL(storageRef);
+      return downloadPhoto;
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const postExchangeThroughFirestore = async () => {
+    try {
+      const photo = await photoExchangeThroughFirestore()
+      console.log('whate is in base :>> ', photo);
+      const postRef = await addDoc(collection(db, "posts"), {
+        photo: photo,
+        place: postState.place,
+        title: postState.title,
+        location: location.coords,
+        user: {userId, login}
+      });
+      console.log('postRef.id :>> ', postRef.id);
+
+    } catch (error) {
+      console.log(error)
     }
   };
 
@@ -144,13 +185,15 @@ const CreatePostsScreen = ({ navigation }) => {
     setPostState(initialPostState);
   };
 
-  const handleSubmit = () => {
+  const sendPost = () => {
     keyboardHide();
-    navigation.navigate("Posts", { photo, location, postState });
+    postExchangeThroughFirestore();
+    navigation.navigate("Posts" );
     setPostState(initialPostState);
     setPhoto(null);
     setEditPhoto(false);
   };
+  console.log('postState :>> ', postState);
 
   return (
     <TouchableWithoutFeedback onPress={keyboardHide}>
@@ -234,7 +277,7 @@ const CreatePostsScreen = ({ navigation }) => {
                 <Image source={mapPinIcon} size={24} style={styles.mapPinImg} />
               </View>
             </View>
-            <FormButton onPress={handleSubmit} isActive={postState.inputFilled}>
+            <FormButton onPress={sendPost} isActive={postState.inputFilled}>
               Опублікувати
             </FormButton>
           </View>

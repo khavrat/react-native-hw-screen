@@ -62,7 +62,6 @@ const RegistrationScreen = () => {
 
   const handleSubmit = () => {
     keyboardHide();
-    // navigation.navigate('MainTab')
     dispatch(authSignUpUser(registrationState));
     setRegistrationState(initialRegistrationState);
   };

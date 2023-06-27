@@ -15,6 +15,7 @@ const firebaseConfig = {
   messagingSenderId: "1086616435907",
   appId: "1:1086616435907:web:49443e27bd196f0f0b3676",
   measurementId: "G-Y1QF3Z572S",
+  storageBucket: "gs://react-native-screens-a8d78.appspot.com",
 };
 
 

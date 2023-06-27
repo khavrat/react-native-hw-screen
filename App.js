@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { Provider } from "react-redux";
+import { PersistGate } from "redux-persist/integration/react";
+import {store, persistor} from './redux/store'
+
 
 import "react-native-gesture-handler";
 
-import { StatusBar } from "expo-status-bar";
 import { Keyboard } from "react-native";
 
 import {
@@ -11,8 +13,6 @@ import {
   Roboto_400Regular,
   Roboto_500Medium,
 } from "@expo-google-fonts/roboto";
-
-import { store } from "./redux/store";
 
 import { KeyboardContext } from "./contexts/KeyboardContext";
 import MainComponent from "./components/MainComponent";
@@ -44,9 +44,9 @@ store.subscribe(() => console.info('store in App', store.getState()));
         value={{ isShowKeyboard, keyboardHide, keyboardShow }}
       >
         <Provider store={store}>
-          <MainComponent />
-          {/* <NavigationContainer>{routing}</NavigationContainer> */}
-          {/* <StatusBar style="auto" /> */}
+          <PersistGate loading={null} persistor={persistor}>
+            <MainComponent />
+          </PersistGate>
         </Provider>
       </KeyboardContext.Provider>
     );

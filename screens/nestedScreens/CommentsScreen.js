@@ -1,4 +1,4 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import {
   Platform,
   TouchableWithoutFeedback,
@@ -10,25 +10,40 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
 } from "react-native";
+import { useSelector } from "react-redux";
+import {
+  collection,
+  addDoc,
+  getDocs,
+  doc,
+  getDoc,
+  query,
+  orderBy,
+} from "firebase/firestore";
+import { format } from "date-fns";
+import { db } from "../../firebase/config";
 
 import useHideTabBarOnNestedScreen from "../../helpers/useHideTabBarOnNested";
 import { KeyboardContext } from "../../contexts/KeyboardContext";
 
 import SendButton from "../../components/screenComponents/SendButton";
 
-const initialCommentsState = {
-  comments: [],
-  comment: "",
-};
-
 const CommentsScreen = ({ route }) => {
-  const { photo } = route.params;
-  
   const { isShowKeyboard, keyboardHide, keyboardShow } =
     useContext(KeyboardContext);
-  
-  const [commentsState, setCommentsState] = useState(initialCommentsState);
+
+  const [comment, setComment] = useState("");
+  const [authorPhoto, setAuthorPhoto] = useState(null);
+  const [allComments, setAllComments] = useState([]);
   const [isActiveInput, setIsActiveInput] = useState("");
+
+  const { id, photo } = route.params;
+
+  const { login, avatarPath } = useSelector((store) => store.auth);
+
+  useEffect(() => {
+    getAllCommentsFromFirebase();
+  }, []);
 
   useHideTabBarOnNestedScreen();
 
@@ -42,21 +57,52 @@ const CommentsScreen = ({ route }) => {
   };
 
   const handleInputChange = (field, value) => {
-    setCommentsState((prevState) => ({
-      ...prevState,
-      [field]: value,
-    }));
+    setComment(value);
   };
 
-  const handleSubmit = () => {
-    keyboardHide();
-    if (commentsState.comment !== "") {
-      setCommentsState((prevState) => ({
-        ...prevState,
-        comments: [...prevState.comments, prevState.comment],
-        comment: "",
-      }));
+  const putCommentToFirebase = async () => {
+    try {
+      keyboardHide();
+      await handleInputChange();
+
+      const uniquePostDate = Date.now();
+      const formattedDate = format(uniquePostDate, "dd MMMM, yyyy | HH:mm");
+
+      await addDoc(collection(db, `posts/${id}/comments`), {
+        login: login,
+        avatarPath: avatarPath,
+        comment: comment,
+        createCommentDate: formattedDate,
+      });
+      setComment("");
+      getAllCommentsFromFirebase();
+    } catch (error) {
+      console.log(error);
     }
+  };
+
+  const getAllCommentsFromFirebase = async () => {
+    try {
+      const commentRef = collection(db, `posts/${id}/comments`);
+      const querySnapshot = await getDocs(query(commentRef, orderBy("createCommentDate")));
+
+      const authorSnapshot = await getDoc(doc(db, "posts", id));
+      const authorLogin = await authorSnapshot.data().user.login;
+      setAuthorPhoto(authorLogin);
+
+      const newComments = await querySnapshot.docs.map((doc) => ({
+        ...doc.data(),
+        id: doc.id,
+      }));
+      setAllComments(newComments);
+
+    } catch (error) {
+      console.log("error in getAllCommentsFromFirebase:>> ", error.message);
+    }
+  };
+
+  const isCurrentUser = (commentatorLogin) => {
+    return authorPhoto === commentatorLogin;
   };
 
   return (
@@ -70,14 +116,48 @@ const CommentsScreen = ({ route }) => {
             />
           </View>
           <FlatList
-            data={commentsState.comments}
-            keyExtractor={(item, index) => index.toString()}
+            data={allComments}
+            keyExtractor={(item) => item.id.toString()}
             renderItem={({ item }) => (
-              <View style={styles.commentBox}>
-                <View style={styles.commentWrapper}>
-                  <Text style={styles.comment}>{item}</Text>
+              <View
+                style={[
+                  styles.commentBox,
+                  isCurrentUser(item.login)
+                    ? styles.isCurrentUserComment
+                    : null,
+                ]}
+              >
+                <View style={styles.commentatorAvatar}>
+                  {item.avatarPath !== null && (
+                    <Image
+                      source={{ uri: item.avatarPath }}
+                      style={{ width: 28, height: 28, borderRadius: 50 }}
+                    />
+                  )}
                 </View>
-                <View style={styles.commentatorAvatar}></View>
+                <View style={styles.commentWrapper}>
+                  <Text
+                    style={[
+                      styles.login,
+                      isCurrentUser(item.login)
+                        ? styles.isCurrentUserLogin
+                        : null,
+                    ]}
+                  >
+                    {item.login}
+                  </Text>
+                  <Text style={styles.comment}>{item.comment}</Text>
+                  <Text
+                    style={[
+                      styles.commentDate,
+                      isCurrentUser(item.login)
+                        ? styles.isCurrentUserCommentDate
+                        : null,
+                    ]}
+                  >
+                    {item.createCommentDate}
+                  </Text>
+                </View>
               </View>
             )}
             style={{ flex: 1, marginTop: 32, marginBottom: 32 }}
@@ -106,11 +186,11 @@ const CommentsScreen = ({ route }) => {
                   handleFocus("comment");
                 }}
                 onBlur={handleBlur}
-                value={commentsState.comment}
+                value={comment}
                 onChangeText={(value) => handleInputChange("comment", value)}
               />
               <View style={styles.sendBtn}>
-                <SendButton onPress={handleSubmit} />
+                <SendButton onPress={putCommentToFirebase} />
               </View>
             </View>
           </KeyboardAvoidingView>
@@ -136,7 +216,6 @@ const styles = StyleSheet.create({
   },
   photoContainer: {
     marginTop: 32,
-    marginBottom: 32,
     marginBottom: 8,
     borderRadius: 8,
     overflow: "hidden",
@@ -144,8 +223,11 @@ const styles = StyleSheet.create({
   commentBox: {
     display: "flex",
     flexDirection: "row",
-    justifyContent: "flex-end",
+    justifyContent: "flex-start",
     gap: 16,
+  },
+  isCurrentUserComment: {
+    flexDirection: "row-reverse",
   },
   commentWrapper: {
     padding: 16,
@@ -163,12 +245,34 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     backgroundColor: "#E8E8E8",
   },
+  login: {
+    fontFamily: "Roboto_400Regular",
+    fontWeight: 500,
+    fontSize: 13,
+    lineHeight: 18,
+    color: "#C2C2C2",
+    textAlign: "left",
+  },
+  isCurrentUserLogin: {
+    textAlign: "right",
+  },
   comment: {
+    marginTop: 8,
     fontFamily: "Roboto_400Regular",
     fontWeight: 400,
     fontSize: 13,
     lineHeight: 18,
     color: "#212121",
+  },
+  commentDate: {
+    marginTop: 8,
+    color: "#BDBDBD",
+    fontSize: 10,
+    fontFamily: "Roboto_400Regular",
+    textAlign: "left",
+  },
+  isCurrentUserCommentDate: {
+    textAlign: "right",
   },
   inputWrapper: {
     position: "relative",

@@ -24,6 +24,7 @@ export const authSignUpUser =
       const userUpdateProfile = {
         login: displayName,
         userId: uid,
+        email: email,
       };
 
       dispatch(authSlice.actions.updateUserProfile(userUpdateProfile));
@@ -35,8 +36,9 @@ export const authSignUpUser =
 export const authSignInUser =
   ({ email, password }) =>
   async (dispatch, getState) => {
+    console.log("authSignInUser :>> ");
     try {
-      const user = await signInWithEmailAndPassword(auth, email, password);
+      await signInWithEmailAndPassword(auth, email, password);
     } catch (error) {
       console.log("error.message", error.message);
     }
@@ -44,7 +46,8 @@ export const authSignInUser =
 
 export const authSignOutUser = () => async (dispatch, getState) => {
   await signOut(auth);
-  dispatch(authSlice.actions.authSignOut())
+  dispatch(authSlice.actions.authSignOut());
+  dispatch(authSlice.actions.updateAvatarPath(null));
 };
 
 export const authStateChangeUser = () => async (dispatch, getState) => {
@@ -53,10 +56,26 @@ export const authStateChangeUser = () => async (dispatch, getState) => {
       const userUpdateProfile = {
         login: user.displayName,
         userId: user.uid,
+        email: user.email,
       };
-
       dispatch(authSlice.actions.authStateChange({ stateChange: true }));
       dispatch(authSlice.actions.updateUserProfile(userUpdateProfile));
     }
   });
 };
+
+export const authChangeAvatarUser =
+  ({ avatarPath }) =>
+  async (dispatch, getState) => {
+    console.log(
+      "avatarPath in  Operation authChangeAvatarUser:>> ",
+      avatarPath
+    );
+    await onAuthStateChanged(auth, () => {
+      const userUpdatedAvatar = {
+        avatarPath: avatarPath,
+      };
+      dispatch(authSlice.actions.authStateChange({ stateChange: true }));
+      dispatch(authSlice.actions.updateAvatarPath(userUpdatedAvatar));
+    });
+  };
