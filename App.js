@@ -22,11 +22,6 @@ export default function App() {
   const [isShowKeyboard, setIsShowKeyboard] = useState(false);
 
 
-
-
-store.subscribe(() => console.info('store in App', store.getState()));
-
-
   const keyboardHide = () => {
     Keyboard.dismiss();
     setIsShowKeyboard(false);

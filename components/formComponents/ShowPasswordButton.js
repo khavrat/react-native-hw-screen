@@ -6,7 +6,6 @@ const ShowPasswordButton = () => {
 
   const handleTogglePassword = () => {
       setIsShowPassword(!isShowPassword);
-      console.log('isShowPassword in btn:>> ', isShowPassword);
   };
 
   return (

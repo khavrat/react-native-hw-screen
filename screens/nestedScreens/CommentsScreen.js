@@ -1,7 +1,6 @@
 import { useState, useContext, useEffect } from "react";
 import {
   Platform,
-  TouchableWithoutFeedback,
   View,
   Text,
   TextInput,
@@ -21,12 +20,14 @@ import {
   orderBy,
 } from "firebase/firestore";
 import { format } from "date-fns";
+import uk from "date-fns/locale/uk";
+
 import { db } from "../../firebase/config";
 
-import useHideTabBarOnNestedScreen from "../../helpers/useHideTabBarOnNested";
 import { KeyboardContext } from "../../contexts/KeyboardContext";
 
 import SendButton from "../../components/screenComponents/SendButton";
+
 
 const CommentsScreen = ({ route }) => {
   const { isShowKeyboard, keyboardHide, keyboardShow } =
@@ -45,7 +46,6 @@ const CommentsScreen = ({ route }) => {
     getAllCommentsFromFirebase();
   }, []);
 
-  useHideTabBarOnNestedScreen();
 
   const handleFocus = (inputName) => {
     keyboardShow();
@@ -66,7 +66,7 @@ const CommentsScreen = ({ route }) => {
       await handleInputChange();
 
       const uniquePostDate = Date.now();
-      const formattedDate = format(uniquePostDate, "dd MMMM, yyyy | HH:mm");
+      const formattedDate = format(uniquePostDate, "dd MMMM, yyyy | HH:mm", {locale: uk});
 
       await addDoc(collection(db, `posts/${id}/comments`), {
         login: login,
@@ -84,7 +84,9 @@ const CommentsScreen = ({ route }) => {
   const getAllCommentsFromFirebase = async () => {
     try {
       const commentRef = collection(db, `posts/${id}/comments`);
-      const querySnapshot = await getDocs(query(commentRef, orderBy("createCommentDate")));
+      const querySnapshot = await getDocs(
+        query(commentRef, orderBy("createCommentDate"))
+      );
 
       const authorSnapshot = await getDoc(doc(db, "posts", id));
       const authorLogin = await authorSnapshot.data().user.login;
@@ -95,7 +97,6 @@ const CommentsScreen = ({ route }) => {
         id: doc.id,
       }));
       setAllComments(newComments);
-
     } catch (error) {
       console.log("error in getAllCommentsFromFirebase:>> ", error.message);
     }
@@ -106,7 +107,6 @@ const CommentsScreen = ({ route }) => {
   };
 
   return (
-    <TouchableWithoutFeedback onPress={keyboardHide}>
       <View style={styles.container}>
         <View style={styles.contentContainer}>
           <View style={styles.photoContainer}>
@@ -116,8 +116,10 @@ const CommentsScreen = ({ route }) => {
             />
           </View>
           <FlatList
+            showsVerticalScrollIndicator={false}
             data={allComments}
             keyExtractor={(item) => item.id.toString()}
+            style={{ flex: 1, marginTop: 32, marginBottom: 32 }}
             renderItem={({ item }) => (
               <View
                 style={[
@@ -160,7 +162,6 @@ const CommentsScreen = ({ route }) => {
                 </View>
               </View>
             )}
-            style={{ flex: 1, marginTop: 32, marginBottom: 32 }}
           ></FlatList>
           <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -196,7 +197,6 @@ const CommentsScreen = ({ route }) => {
           </KeyboardAvoidingView>
         </View>
       </View>
-    </TouchableWithoutFeedback>
   );
 };
 
@@ -221,7 +221,6 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   commentBox: {
-    display: "flex",
     flexDirection: "row",
     justifyContent: "flex-start",
     gap: 16,
@@ -230,9 +229,11 @@ const styles = StyleSheet.create({
     flexDirection: "row-reverse",
   },
   commentWrapper: {
+    flexGrow: 1,
+    maxWidth: 350,
     padding: 16,
+    paddingTop: 8,
     marginBottom: 24,
-    maxWidth: 300,
     backgroundColor: "rgba(0, 0, 0, 0.03)",
     borderTopLeftRadius: 0,
     borderTopRightRadius: 6,
@@ -257,7 +258,7 @@ const styles = StyleSheet.create({
     textAlign: "right",
   },
   comment: {
-    marginTop: 8,
+    marginTop: 6,
     fontFamily: "Roboto_400Regular",
     fontWeight: 400,
     fontSize: 13,
@@ -269,10 +270,10 @@ const styles = StyleSheet.create({
     color: "#BDBDBD",
     fontSize: 10,
     fontFamily: "Roboto_400Regular",
-    textAlign: "left",
+    textAlign: "right",
   },
   isCurrentUserCommentDate: {
-    textAlign: "right",
+    textAlign: "left",
   },
   inputWrapper: {
     position: "relative",

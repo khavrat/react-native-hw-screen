@@ -21,11 +21,10 @@ import flipCameraIcon from "../../assets/icons/flipCameraIcon.png";
 import mapPinIcon from "../../assets/icons/mapPinIcon.png";
 import trashIcon from "../../assets/icons/trashIcon.png";
 
-import { collection, addDoc, doc, setDoc, getDoc } from "firebase/firestore";
+import { collection, addDoc } from "firebase/firestore";
 import { db, storage } from "../../firebase/config";
 
 import { KeyboardContext } from "../../contexts/KeyboardContext";
-import useHideTabBarOnMainScreen from "../../helpers/useHideTabBarOnMain";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
 const initialPostState = {
@@ -50,8 +49,6 @@ const CreatePostsScreen = ({ navigation }) => {
 
   const { userId, login } = useSelector((state) => state.auth);
 
-  useHideTabBarOnMainScreen();
-
   if (!permission || !permission.granted) {
     requestPermission();
   }
@@ -63,38 +60,33 @@ const CreatePostsScreen = ({ navigation }) => {
         setErrorMsg("В дозволі на доступ до локації було відмовлено");
         return;
       }
+
       let location = await Location.getCurrentPositionAsync({});
       setLocation(location);
+
+      if (editPhoto) {
+        const { latitude, longitude } = location.coords;
+        getLocationName(latitude, longitude);
+      }
     })();
-  }, []);
+  }, [editPhoto]);
 
   const getLocationName = async (latitude, longitude) => {
     try {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        setErrorMsg("В дозволі на доступ до локації було відмовлено");
-        return;
-      }
-      const location = await Location.reverseGeocodeAsync({
+      const locationName = await Location.reverseGeocodeAsync({
         latitude,
         longitude,
       });
-      if (location.length > 0) {
-        const { region, country } = location[0];
-        return `${region}, ${country}`;
-      }
+
+      const { region, country } = locationName[0];
+      setPostState((prevState) => ({
+        ...prevState,
+        place: `${region}, ${country}`,
+      }));
     } catch (error) {
       console.log(error.message);
     }
     return null;
-  };
-
-  const putLocationToInput = async (latitude, longitude) => {
-    const locationName = await getLocationName(latitude, longitude);
-    setPostState((prevState) => ({
-      ...prevState,
-      place: locationName,
-    }));
   };
 
   function toggleCameraType() {
@@ -104,14 +96,13 @@ const CreatePostsScreen = ({ navigation }) => {
   }
 
   const takePhoto = async () => {
+    console.log(" takePhoto:>> ");
     try {
       const photo = await cameraRef.current.takePictureAsync();
       setPhoto(photo.uri);
-      const { latitude, longitude } = location.coords;
-      putLocationToInput(latitude, longitude);
       setEditPhoto(true);
     } catch (error) {
-      console.log(error.message);
+      console.log("error in takePhoto", error.message);
     }
   };
 
@@ -128,25 +119,24 @@ const CreatePostsScreen = ({ navigation }) => {
       const downloadPhoto = await getDownloadURL(storageRef);
       return downloadPhoto;
     } catch (error) {
-      console.log(error);
+      console.log("error in photoExchangeThroughFirestore", error);
     }
   };
 
   const postExchangeThroughFirestore = async () => {
     try {
-      const photo = await photoExchangeThroughFirestore()
-      console.log('whate is in base :>> ', photo);
+      const photo = await photoExchangeThroughFirestore();
+
       const postRef = await addDoc(collection(db, "posts"), {
         photo: photo,
         place: postState.place,
         title: postState.title,
         location: location.coords,
-        user: {userId, login}
+        user: { userId, login },
       });
       console.log('postRef.id :>> ', postRef.id);
-
     } catch (error) {
-      console.log(error)
+      console.log("error in postExchangeThroughFirestore", error.message);
     }
   };
 
@@ -185,15 +175,14 @@ const CreatePostsScreen = ({ navigation }) => {
     setPostState(initialPostState);
   };
 
-  const sendPost = () => {
+  const sendPost = async () => {
     keyboardHide();
-    postExchangeThroughFirestore();
-    navigation.navigate("Posts" );
+    await postExchangeThroughFirestore();
+    navigation.navigate("Posts");
     setPostState(initialPostState);
     setPhoto(null);
     setEditPhoto(false);
   };
-  console.log('postState :>> ', postState);
 
   return (
     <TouchableWithoutFeedback onPress={keyboardHide}>

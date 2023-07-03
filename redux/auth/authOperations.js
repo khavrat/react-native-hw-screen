@@ -28,54 +28,72 @@ export const authSignUpUser =
       };
 
       dispatch(authSlice.actions.updateUserProfile(userUpdateProfile));
+      dispatch(authSlice.actions.authStateChange({ stateChange: true }));
     } catch (error) {
-      console.log("error.message", error.message);
+      console.log("error.message in authSignUpUser", error.message);
     }
   };
 
 export const authSignInUser =
   ({ email, password }) =>
   async (dispatch, getState) => {
-    console.log("authSignInUser :>> ");
     try {
       await signInWithEmailAndPassword(auth, email, password);
     } catch (error) {
-      console.log("error.message", error.message);
+      console.log("error in authSignInUser", error.message);
     }
   };
 
 export const authSignOutUser = () => async (dispatch, getState) => {
-  await signOut(auth);
-  dispatch(authSlice.actions.authSignOut());
-  dispatch(authSlice.actions.updateAvatarPath(null));
+  try {
+    await signOut(auth);
+    dispatch(authSlice.actions.authSignOut());
+  } catch (error) {
+    console.log("error  in :>> authSignOutUser", error.message);
+  }
 };
 
 export const authStateChangeUser = () => async (dispatch, getState) => {
-  await onAuthStateChanged(auth, (user) => {
-    if (user) {
-      const userUpdateProfile = {
-        login: user.displayName,
-        userId: user.uid,
-        email: user.email,
-      };
-      dispatch(authSlice.actions.authStateChange({ stateChange: true }));
-      dispatch(authSlice.actions.updateUserProfile(userUpdateProfile));
-    }
-  });
+  try {
+    await onAuthStateChanged(auth, (user) => {
+      if (user) {
+        const userUpdateProfile = {
+          login: user.displayName,
+          userId: user.uid,
+          email: user.email,
+        };
+        dispatch(authSlice.actions.authStateChange({ stateChange: true }));
+        dispatch(authSlice.actions.updateUserProfile(userUpdateProfile));
+      }
+    });
+  } catch (error) {
+    console.log("error in authStateChangeUser:>> ", error.message);
+  }
 };
 
 export const authChangeAvatarUser =
   ({ avatarPath }) =>
   async (dispatch, getState) => {
-    console.log(
-      "avatarPath in  Operation authChangeAvatarUser:>> ",
-      avatarPath
-    );
-    await onAuthStateChanged(auth, () => {
-      const userUpdatedAvatar = {
-        avatarPath: avatarPath,
-      };
-      dispatch(authSlice.actions.authStateChange({ stateChange: true }));
-      dispatch(authSlice.actions.updateAvatarPath(userUpdatedAvatar));
-    });
+    try {
+      await onAuthStateChanged(auth, () => {
+        const userUpdatedAvatar = {
+          avatarPath: avatarPath,
+        };
+
+        const { stateChange } = getState().auth;
+        if (stateChange === false) {
+          dispatch(authSlice.actions.updateAvatarPath(userUpdatedAvatar));
+        }
+        if (stateChange === true) {
+          dispatch(authSlice.actions.updateAvatarPath(userUpdatedAvatar));
+          dispatch(
+            authSlice.actions.authStateChange({
+              stateChange: true,
+            })
+          );
+        }
+      });
+    } catch (error) {
+      console.log("error in authChangeAvatarUser:>> ", error.message);
+    }
   };

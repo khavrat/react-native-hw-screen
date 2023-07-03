@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useIsFocused } from "@react-navigation/native";
 import { useSelector } from "react-redux";
 import {
   View,
@@ -8,30 +9,67 @@ import {
   Image,
   TouchableOpacity,
 } from "react-native";
-import { collection, getDocs } from "firebase/firestore";
+import {
+  arrayUnion,
+  arrayRemove,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  updateDoc,
+  onSnapshot,
+  query,
+} from "firebase/firestore";
+
 import { db } from "../../firebase/config";
+
 import mapPinIcon from "../../assets/icons/mapPinIcon.png";
 import commentsIcon from "../../assets/icons/commentsIcon.png";
+import commentsActiveIcon from "../../assets/icons/commentsActiveIcon.png";
+import thumbUp from "../../assets/icons/thumbUp.png";
+import thumbUpActive from "../../assets/icons/thumbUpActive.png";
 
 const HomePostsScreen = ({ navigation, route }) => {
   const [posts, setPosts] = useState([]);
+  const [liked, setLiked] = useState(false);
 
-  const { login, email, userId, avatarPath } = useSelector((state) => state.auth);
+  const isFocused = useIsFocused();
+
+  const { login, email, userId, avatarPath } = useSelector(
+    (state) => state.auth
+  );
 
   useEffect(() => {
-    getAllPost();
-  }, []);
+    if (isFocused) {
+      getAllPost();
+    }
+  }, [isFocused]);
 
   const getAllPost = async () => {
-    const querySnapshot = await getDocs(collection(db, "posts"));
+    try {
+      const q = query(collection(db, "posts"));
+      const querySnapshot = await getDocs(q);
 
-    const newPosts = querySnapshot.docs.map((doc) => ({
-      ...doc.data(),
-      id: doc.id,
-    }));
-    setPosts(newPosts);
+      const newPosts = querySnapshot.docs.map((doc) => ({
+        ...doc.data(),
+        id: doc.id,
+      }));
+      
+      const postCommentsPromises = newPosts.map((post) =>
+        getDocs(collection(db, `posts/${post.id}/comments`))
+      );
+      const postCommentsSnapshots = await Promise.all(postCommentsPromises);
+
+      const postsWithCountComments = newPosts.map((post, index) => ({
+        ...post,
+        countComments: postCommentsSnapshots[index].size,
+      }));
+
+      setPosts(postsWithCountComments);
+    } catch (error) {
+      console.log("error in  getAllPost:>> ", error.message);
+    }
   };
-  console.log("posts :>> ", posts);
 
   const sendLocationToMap = (latitude, longitude, title) => {
     navigation.navigate("Map", { latitude, longitude, title });
@@ -39,6 +77,71 @@ const HomePostsScreen = ({ navigation, route }) => {
 
   const openComments = (id, photo) => {
     navigation.navigate("Comments", { id, photo });
+  };
+
+  const toggleCountLikes = (id) => {
+    setLiked((prevState) => {
+      const newLiked = !prevState;
+      updateLikesCountByFirebase(id, newLiked);
+      return newLiked;
+    });
+  };
+
+  const updateLikesCountByFirebase = async (id, newLiked) => {
+    try {
+      if (newLiked === true) {
+        const likesRef = doc(db, `posts/${id}`);
+
+        await updateDoc(likesRef, {
+          likes: arrayUnion(userId),
+        });
+
+        const updatedDocAdd = await getDoc(likesRef);
+        const updatedLikeAdd = updatedDocAdd.data();
+
+        if (updatedLikeAdd.likes) {
+          setPosts((prevPosts) => {
+            const updatedPosts = prevPosts.map((post) => {
+              if (post.id === id) {
+                return {
+                  ...post,
+                  likes: updatedLikeAdd.likes,
+                };
+              }
+              return post;
+            });
+            return updatedPosts;
+          });
+        }
+      }
+
+      if (newLiked === false) {
+        const likesRef = doc(db, `posts/${id}`);
+
+        await updateDoc(likesRef, {
+          likes: arrayRemove(userId),
+        });
+        const updatedDocRemove = await getDoc(likesRef);
+        const updatedLikeRemove = updatedDocRemove.data();
+
+        if (updatedLikeRemove.likes) {
+          setPosts((prevPosts) => {
+            const updatedPosts = prevPosts.map((post) => {
+              if (post.id === id) {
+                return {
+                  ...post,
+                  likes: updatedLikeRemove.likes,
+                };
+              }
+              return post;
+            });
+            return updatedPosts;
+          });
+        }
+      }
+    } catch (error) {
+      console.log("error in toggleCountLikes :>> ", error.message);
+    }
   };
 
   return (
@@ -58,6 +161,7 @@ const HomePostsScreen = ({ navigation, route }) => {
         </View>
       </View>
       <FlatList
+        showsVerticalScrollIndicator={false}
         data={posts}
         keyExtractor={(item, index) => index.toString()}
         renderItem={({ item }) => (
@@ -70,23 +174,58 @@ const HomePostsScreen = ({ navigation, route }) => {
             </View>
             <Text style={styles.photoTitle}>{item.title}</Text>
             <View style={styles.infoBlock}>
-              <TouchableOpacity
-                style={styles.infoDetails}
-                title="go to comments"
-                activeOpacity={0.8}
-                onPress={() => {
-                  item.location && openComments(item.id, item.photo);
-                }}
-              >
-                <Image
-                  source={commentsIcon}
-                  size={24}
-                  style={styles.infoDetailsIcon}
-                />
-                <View>
-                  <Text>0</Text>
-                </View>
-              </TouchableOpacity>
+              <View style={styles.commentsLikes}>
+                <TouchableOpacity
+                  style={styles.infoDetails}
+                  title="go to comments"
+                  activeOpacity={0.8}
+                  onPress={() => {
+                    openComments(item.id, item.photo);
+                  }}
+                >
+                  {item.countComments > 0 ? (
+                    <Image
+                      source={commentsActiveIcon}
+                      size={24}
+                      style={styles.infoDetailsIcon}
+                    />
+                  ) : (
+                    <Image
+                      source={commentsIcon}
+                      size={24}
+                      style={styles.infoDetailsIcon}
+                    />
+                  )}
+                  <View>
+                    <Text>{item.countComments}</Text>
+                  </View>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.infoDetails}
+                  title="likes"
+                  activeOpacity={0.8}
+                  onPress={() => {
+                    toggleCountLikes(item.id);
+                  }}
+                >
+                  {item.likes && item.likes.length > 0 ? (
+                    <Image
+                      source={thumbUpActive}
+                      size={24}
+                      style={styles.infoDetailsIcon}
+                    />
+                  ) : (
+                    <Image
+                      source={thumbUp}
+                      size={24}
+                      style={styles.infoDetailsIcon}
+                    />
+                  )}
+                  <View>
+                    <Text>{item.likes ? item.likes.length : 0}</Text>
+                  </View>
+                </TouchableOpacity>
+              </View>
               <TouchableOpacity
                 style={styles.infoDetails}
                 title="go to map"
@@ -180,15 +319,21 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
+  commentsLikes: {
+    display: "flex",
+    flexDirection: "row",
+  },
   infoDetails: {
     display: "flex",
     flexDirection: "row",
     alignItems: "center",
+    marginRight: 24,
   },
   infoDetailsIcon: {
     marginRight: 4,
   },
   locationInfo: {
+    maxWidth: 250,
     fontFamily: "Roboto_400Regular",
     fontWeight: 400,
     fontSize: 16,

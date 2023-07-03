@@ -19,7 +19,9 @@ import imageBg from "../../assets/images/imageBg.jpg";
 import Avatar from "../../components/formComponents/Avatar";
 import FormButton from "../../components/formComponents/FormButton";
 
-import {authSignUpUser} from '../../redux/auth/authOperations'
+import {
+  authSignUpUser,
+} from "../../redux/auth/authOperations";
 
 const initialRegistrationState = {
   login: "",
@@ -28,7 +30,7 @@ const initialRegistrationState = {
 };
 
 const RegistrationScreen = () => {
-  const navigation = useNavigation()
+  const navigation = useNavigation();
   const { isShowKeyboard, keyboardHide, keyboardShow } =
     useContext(KeyboardContext);
 

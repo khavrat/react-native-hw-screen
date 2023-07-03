@@ -1,12 +1,17 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { ref, getDownloadURL, uploadBytes } from "firebase/storage";
+import { storage } from "../../firebase/config";
+
 import { View, TouchableOpacity, Image, StyleSheet } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 
 import addAvatar from "../../assets/icons/addAvatar.png";
 import removeAvatar from "../../assets/icons/removeAvatar.png";
 
-import { authChangeAvatarUser } from "../../redux/auth/authOperations";
+import {
+  authChangeAvatarUser,
+} from "../../redux/auth/authOperations";
 
 const Avatar = () => {
   const [choosedImagePath, setChoosedImagePath] = useState("");
@@ -15,28 +20,50 @@ const Avatar = () => {
 
   useEffect(() => {
     if (avatarPath) {
-      console.log("avatarPath true :>> ", avatarPath);
       setChoosedImagePath(avatarPath);
     }
-        if (!avatarPath) {
-          console.log("avatarPath false :>> ", avatarPath);
-          setChoosedImagePath(null);
-        }
-
+    if (!avatarPath) {
+      setChoosedImagePath(null);
+    }
   }, [avatarPath]);
 
   const pickAvatar = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
-    console.log('result :>> ', result);
+    try {
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 1,
+      });
 
-    if (!result.canceled) {
-      setChoosedImagePath(result.assets[0].uri);
-      dispatch(authChangeAvatarUser({ avatarPath: result.assets[0].uri }));
+      if (!result.canceled) {
+        const { uri } = result.assets[0];
+        const downloadAvatar = await uploadAvatarToFirebaseStorage(uri);
+
+        dispatch(authChangeAvatarUser({ avatarPath: downloadAvatar }));
+        setChoosedImagePath(uri);
+      }
+    } catch (error) {
+      console.log("error in  pickAvatar:>> ", error.message);
+    }
+  };
+
+  const uploadAvatarToFirebaseStorage = async (avatarUri) => {
+    try {
+      if (avatarUri) {
+        const response = await fetch(avatarUri);
+        const blob = await response.blob();
+
+        const filename = avatarUri.substring(avatarUri.lastIndexOf("/") + 1);
+        const storageRef = ref(storage, `avatarsUsers/${filename}`);
+
+        await uploadBytes(storageRef, blob);
+
+        const downloadAvatar = await getDownloadURL(storageRef);
+        return downloadAvatar;
+      }
+    } catch (error) {
+      console.log("error in  uploadAvatarToFirebaseStorage:>> ", error.message);
     }
   };
 

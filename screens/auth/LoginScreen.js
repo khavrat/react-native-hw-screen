@@ -55,7 +55,6 @@ const LoginScreen = ({ navigation }) => {
 
   const handleSubmit = () => {
     keyboardHide();
-    // navigation.navigate("MainTab");
     dispatch(authSignInUser(loginState));
     setLoginState(initialLoginState);
   };

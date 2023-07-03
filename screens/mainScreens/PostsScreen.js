@@ -1,6 +1,5 @@
 import { createStackNavigator } from "@react-navigation/stack";
-// import { moduleName } from "react-native";
-import { Image, View } from "react-native";
+import { View } from "react-native";
 import { useDispatch } from "react-redux";
 
 import HomePostsScreen from "../nestedScreens/Home";
@@ -14,7 +13,7 @@ import { authSignOutUser } from "../../redux/auth/authOperations";
 
 const NestedStack = createStackNavigator();
 
-const PostsScreen = ({ navigation }) => {
+const PostsScreen = () => {
     const dispatch = useDispatch();
 
     const signOut = () => {
