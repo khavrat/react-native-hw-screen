@@ -39,5 +39,5 @@ Contains two authorization screens (login and password login), main screens: scr
 
 5. Some screenshots app:
 
-![RegistrationScreen](./screenshotsReadme/registration.png/150*300)
-![PostsScreen](./screenshotsReadme/posts.png/150*300)
+![](./screenshotsReadme/registration.png)
+![](./screenshotsReadme/posts.png)
